@@ -18,14 +18,13 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minLength: 6,
-        maxLength: 50 
     },
     gender : {
         type: String,
         required: true,
-        enum: ['male', 'female', 'other']
+        enum: ['male', 'female']
     },
-    profilePic: {
+    avatar: {
         type: String,
         default: ""
     }
