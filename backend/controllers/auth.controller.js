@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 
+import { generateJWTAndSetCookie } from "../utils/generateJWT.js";
+
 export const signup = async (req, res) => {
     try {
         console.log(req);
@@ -28,23 +30,49 @@ export const signup = async (req, res) => {
             avatar: gender === "male " ? boyAvatar : girlAvatar
         })
 
-        await newUser.save();
-
-        res.status(201).json({
-            _id: newUser._id,
-            fullName: newUser.fullName,
-            username: newUser.username,
-            avatar: newUser.avatar,
-        });
+        if(newUser){
+            await generateJWTAndSetCookie(newUser._id, res);
+            await newUser.save();
+            
+            res.status(201).json({
+              _id: newUser._id,
+              fullName: newUser.fullName,
+              username: newUser.username,
+              avatar: newUser.avatar,
+            });
+        } else {
+            res.status(400).json({message: "Invalid user data"});
+        }
 
     } catch (error) {
       console.log("Error in signup", error.message);
       res.status(500).json({message: "Internal server error"});
     }
 }
-export const login = (req, res) => {
-  console.log("loginUser");
-};
+export const login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({username});
+    const isPasswordCorrect = await bcryptjs.compare(password, user?.password || "");
+
+    if(!user || !isPasswordCorrect) {
+      return res.status(400).json({message: "Invalid username or password"});
+    }
+
+    generateJWTAndSetCookie(user._id, res);
+    
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      username: user.username,
+      avatar: user.avatar,
+    });
+  
+} catch (error) {
+    console.log("Error in login", error.message);
+    res.status(500).json({message: "Internal server error"});
+  }
+}
 export const logout = (req, res) => {
   console.log("logoutUser");
 };
